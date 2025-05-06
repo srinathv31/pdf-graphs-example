@@ -135,6 +135,7 @@ interface PDFDocumentProps {
   };
   chartImages?: {
     monthlyBar?: string;
+    monthlyBarSize?: { width: number; height: number };
   };
 }
 
@@ -143,156 +144,189 @@ const PDFDocument = ({
   description,
   data,
   chartImages,
-}: PDFDocumentProps) => (
-  <Document>
-    {/* First Page - Summary Cards and First Charts */}
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Image src="/logo.png" style={styles.logo} />
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-      </View>
+}: PDFDocumentProps) => {
+  // Calculate target size for the chart image
+  const targetWidth = 320;
+  let targetHeight = 170;
+  if (
+    chartImages?.monthlyBarSize?.width &&
+    chartImages?.monthlyBarSize?.height
+  ) {
+    const aspectRatio =
+      chartImages.monthlyBarSize.width / chartImages.monthlyBarSize.height;
+    targetHeight = Math.round(targetWidth / aspectRatio);
+  }
 
-      <View style={styles.section}>
-        <View style={styles.row}>
-          {data.summaryCards.map((card, index) => (
-            <View key={index} style={styles.summaryCard}>
-              <Text style={styles.cardValue}>{card.title}</Text>
-              <Text style={styles.cardDescription}>{card.description}</Text>
-              <View style={styles.smallChartContainer}>
+  return (
+    <Document>
+      {/* First Page - Summary Cards and First Charts */}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Image src="/logo.png" style={styles.logo} />
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            {data.summaryCards.map((card, index) => (
+              <View key={index} style={styles.summaryCard}>
+                <Text style={styles.cardValue}>{card.title}</Text>
+                <Text style={styles.cardDescription}>{card.description}</Text>
+                <View style={styles.smallChartContainer}>
+                  <PDFChartImage
+                    type="line"
+                    data={{
+                      categories: card.data.map((_: number, idx: number) =>
+                        idx.toString()
+                      ),
+                      series: [
+                        {
+                          name: card.title,
+                          data: card.data,
+                          color: card.color.includes(".")
+                            ? card.color.split(".")[1]
+                            : "blue",
+                        },
+                      ],
+                    }}
+                    width={110}
+                    height={60}
+                    showGrid={true}
+                    showAxis={false}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={{ ...styles.largeCard, width: "100%" }}>
+              <Text style={styles.cardTitle}>{data.monthlySales.title}</Text>
+              <View
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  margin: 0,
+                }}
+              >
+                {/* Use the captured monthly bar chart image if available */}
+                {chartImages?.monthlyBar ? (
+                  <Image
+                    src={chartImages.monthlyBar}
+                    style={{
+                      width: targetWidth,
+                      height: targetHeight,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}
+                  />
+                ) : (
+                  <PDFChartImage
+                    type="bar"
+                    data={data.monthlySales}
+                    width={320}
+                    height={170}
+                    showGrid={true}
+                    showAxis={true}
+                  />
+                )}
+              </View>
+            </View>
+
+            <View style={styles.mediumCard}>
+              <Text style={styles.cardTitle}>{data.departmentSales.title}</Text>
+              <View style={styles.chartContainer}>
                 <PDFChartImage
-                  type="line"
+                  type="pie"
                   data={{
-                    categories: card.data.map((_: number, idx: number) =>
-                      idx.toString()
+                    categories: data.departmentSales.series.map(
+                      (item) => item.name
                     ),
                     series: [
                       {
-                        name: card.title,
-                        data: card.data,
-                        color: card.color.includes(".")
-                          ? card.color.split(".")[1]
-                          : "blue",
+                        name: data.departmentSales.title,
+                        data: data.departmentSales.series.map(
+                          (item) => item.value
+                        ),
+                        color: "teal",
                       },
                     ],
                   }}
-                  width={110}
-                  height={60}
-                  showGrid={true}
+                  width={180}
+                  height={170}
+                  showGrid={false}
                   showAxis={false}
+                  showLegend={true}
                 />
               </View>
             </View>
-          ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <View style={styles.row}>
-          <View style={styles.largeCard}>
-            <Text style={styles.cardTitle}>{data.monthlySales.title}</Text>
-            <View style={styles.chartContainer}>
-              {/* Use the captured monthly bar chart image if available */}
-              {chartImages?.monthlyBar ? (
-                <Image
-                  src={chartImages.monthlyBar}
-                  style={{ width: 320, height: 170 }}
-                />
-              ) : (
+        <Text
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            `${pageNumber} / ${totalPages}`
+          }
+        />
+      </Page>
+
+      {/* Second Page - Remaining Charts */}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title} - Continued</Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.mediumCard}>
+              <Text style={styles.cardTitle}>{data.dailyVisits.title}</Text>
+              <View style={styles.chartContainer}>
                 <PDFChartImage
-                  type="bar"
-                  data={data.monthlySales}
-                  width={320}
+                  type="area"
+                  data={data.dailyVisits}
+                  width={220}
                   height={170}
                   showGrid={true}
                   showAxis={true}
                 />
-              )}
+              </View>
             </View>
-          </View>
 
-          <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.departmentSales.title}</Text>
-            <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="pie"
-                data={{
-                  categories: data.departmentSales.series.map(
-                    (item) => item.name
-                  ),
-                  series: [
-                    {
-                      name: data.departmentSales.title,
-                      data: data.departmentSales.series.map(
-                        (item) => item.value
-                      ),
-                      color: "teal",
-                    },
-                  ],
-                }}
-                width={180}
-                height={170}
-                showGrid={false}
-                showAxis={false}
-                showLegend={true}
-              />
+            <View style={styles.mediumCard}>
+              <Text style={styles.cardTitle}>{data.customers.title}</Text>
+              <Text style={styles.cardValue}>{data.customers.value}</Text>
+              <View style={styles.chartContainer}>
+                <PDFChartImage
+                  type="line"
+                  data={data.customers}
+                  width={220}
+                  height={170}
+                  showGrid={true}
+                  showAxis={true}
+                  showLegend={true}
+                />
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      <Text
-        style={styles.pageNumber}
-        render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-      />
-    </Page>
-
-    {/* Second Page - Remaining Charts */}
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{title} - Continued</Text>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.row}>
-          <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.dailyVisits.title}</Text>
-            <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="area"
-                data={data.dailyVisits}
-                width={220}
-                height={170}
-                showGrid={true}
-                showAxis={true}
-              />
-            </View>
-          </View>
-
-          <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.customers.title}</Text>
-            <Text style={styles.cardValue}>{data.customers.value}</Text>
-            <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="line"
-                data={data.customers}
-                width={220}
-                height={170}
-                showGrid={true}
-                showAxis={true}
-                showLegend={true}
-              />
-            </View>
-          </View>
-        </View>
-      </View>
-
-      <Text
-        style={styles.pageNumber}
-        render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-      />
-    </Page>
-  </Document>
-);
+        <Text
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            `${pageNumber} / ${totalPages}`
+          }
+        />
+      </Page>
+    </Document>
+  );
+};
 
 export default PDFDocument;

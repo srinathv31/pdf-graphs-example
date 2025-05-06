@@ -26,6 +26,18 @@ const PDFExportButton = ({
   const handleExport = async () => {
     setIsExporting(true);
 
+    // Helper to get image size from data URL
+    const getImageSize = (
+      dataUrl: string
+    ): Promise<{ width: number; height: number }> => {
+      return new Promise((resolve) => {
+        const img = new window.Image();
+        img.onload = () =>
+          resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.src = dataUrl;
+      });
+    };
+
     toast.promise(
       (async () => {
         // Add a slight delay to ensure charts have rendered in the DOM
@@ -33,18 +45,27 @@ const PDFExportButton = ({
 
         // Capture the chart as an image
         let monthlyBarImage = undefined;
+        let monthlyBarImageSize = undefined;
         if (chartRef.current) {
           monthlyBarImage = await domtoimage.toPng(chartRef.current);
-          console.log("Captured chart image:", monthlyBarImage);
+          monthlyBarImageSize = await getImageSize(monthlyBarImage);
+          console.log(
+            "Captured chart image:",
+            monthlyBarImage,
+            monthlyBarImageSize
+          );
         }
 
-        // Create the PDF document, passing the chart image(s)
+        // Create the PDF document, passing the chart image(s) and size
         const doc = (
           <PDFDocument
             title={title}
             description={description}
             data={data}
-            chartImages={{ monthlyBar: monthlyBarImage }}
+            chartImages={{
+              monthlyBar: monthlyBarImage,
+              monthlyBarSize: monthlyBarImageSize,
+            }}
           />
         );
         const blob = await pdf(doc).toBlob();
