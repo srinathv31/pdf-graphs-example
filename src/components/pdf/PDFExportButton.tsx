@@ -8,6 +8,9 @@ import PDFDocument from "./PDFDocument";
 import { toast } from "sonner";
 import domtoimage from "dom-to-image";
 import MonthlyBarChart from "../dashboard/MonthlyBarChart";
+import DepartmentPieChart from "../dashboard/DepartmentPieChart";
+import DailyVisitsAreaChart from "../dashboard/DailyVisitsAreaChart";
+import CustomersAreaChart from "../dashboard/CustomersLineChart";
 
 interface PDFExportButtonProps {
   title: string;
@@ -21,7 +24,10 @@ const PDFExportButton = ({
   data,
 }: PDFExportButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
-  const chartRef = useRef<HTMLDivElement>(null);
+  const monthlyBarRef = useRef<HTMLDivElement>(null);
+  const departmentPieRef = useRef<HTMLDivElement>(null);
+  const dailyVisitsRef = useRef<HTMLDivElement>(null);
+  const customersRef = useRef<HTMLDivElement>(null);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -43,20 +49,29 @@ const PDFExportButton = ({
         // Add a slight delay to ensure charts have rendered in the DOM
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Capture the chart as an image
-        let monthlyBarImage = undefined;
-        let monthlyBarImageSize = undefined;
-        if (chartRef.current) {
-          monthlyBarImage = await domtoimage.toPng(chartRef.current);
+        // Capture the charts as images
+        let monthlyBarImage, monthlyBarImageSize;
+        let departmentPieImage, departmentPieImageSize;
+        let dailyVisitsImage, dailyVisitsImageSize;
+        let customersImage, customersImageSize;
+        if (monthlyBarRef.current) {
+          monthlyBarImage = await domtoimage.toPng(monthlyBarRef.current);
           monthlyBarImageSize = await getImageSize(monthlyBarImage);
-          console.log(
-            "Captured chart image:",
-            monthlyBarImage,
-            monthlyBarImageSize
-          );
+        }
+        if (departmentPieRef.current) {
+          departmentPieImage = await domtoimage.toPng(departmentPieRef.current);
+          departmentPieImageSize = await getImageSize(departmentPieImage);
+        }
+        if (dailyVisitsRef.current) {
+          dailyVisitsImage = await domtoimage.toPng(dailyVisitsRef.current);
+          dailyVisitsImageSize = await getImageSize(dailyVisitsImage);
+        }
+        if (customersRef.current) {
+          customersImage = await domtoimage.toPng(customersRef.current);
+          customersImageSize = await getImageSize(customersImage);
         }
 
-        // Create the PDF document, passing the chart image(s) and size
+        // Create the PDF document, passing the chart images and sizes
         const doc = (
           <PDFDocument
             title={title}
@@ -65,6 +80,12 @@ const PDFExportButton = ({
             chartImages={{
               monthlyBar: monthlyBarImage,
               monthlyBarSize: monthlyBarImageSize,
+              departmentPie: departmentPieImage,
+              departmentPieSize: departmentPieImageSize,
+              dailyVisits: dailyVisitsImage,
+              dailyVisitsSize: dailyVisitsImageSize,
+              customers: customersImage,
+              customersSize: customersImageSize,
             }}
           />
         );
@@ -94,7 +115,7 @@ const PDFExportButton = ({
     setIsExporting(false);
   };
 
-  // Render the chart off-screen for image capture
+  // Render the charts off-screen for image capture
   return (
     <>
       <div
@@ -109,7 +130,13 @@ const PDFExportButton = ({
           zIndex: -1,
         }}
       >
-        <MonthlyBarChart ref={chartRef} data={data.monthlySales} />
+        <MonthlyBarChart ref={monthlyBarRef} data={data.monthlySales} />
+        <DepartmentPieChart
+          ref={departmentPieRef}
+          data={data.departmentSales}
+        />
+        <DailyVisitsAreaChart ref={dailyVisitsRef} data={data.dailyVisits} />
+        <CustomersAreaChart ref={customersRef} data={data.customers} />
       </div>
       <Button onClick={handleExport} disabled={isExporting}>
         <Download className="mr-2 h-4 w-4" />

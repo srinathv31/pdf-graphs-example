@@ -136,6 +136,12 @@ interface PDFDocumentProps {
   chartImages?: {
     monthlyBar?: string;
     monthlyBarSize?: { width: number; height: number };
+    departmentPie?: string;
+    departmentPieSize?: { width: number; height: number };
+    dailyVisits?: string;
+    dailyVisitsSize?: { width: number; height: number };
+    customers?: string;
+    customersSize?: { width: number; height: number };
   };
 }
 
@@ -145,17 +151,30 @@ const PDFDocument = ({
   data,
   chartImages,
 }: PDFDocumentProps) => {
-  // Calculate target size for the chart image
-  const targetWidth = 320;
-  let targetHeight = 170;
-  if (
-    chartImages?.monthlyBarSize?.width &&
-    chartImages?.monthlyBarSize?.height
-  ) {
-    const aspectRatio =
-      chartImages.monthlyBarSize.width / chartImages.monthlyBarSize.height;
-    targetHeight = Math.round(targetWidth / aspectRatio);
-  }
+  // Calculate target size for the chart images
+  const getTargetSize = (
+    size?: { width: number; height: number },
+    defaultWidth = 320,
+    defaultHeight = 170
+  ) => {
+    if (size?.width && size?.height) {
+      const aspectRatio = size.width / size.height;
+      return {
+        width: defaultWidth,
+        height: Math.round(defaultWidth / aspectRatio),
+      };
+    }
+    return { width: defaultWidth, height: defaultHeight };
+  };
+
+  const monthlyBarSize = getTargetSize(chartImages?.monthlyBarSize, 320, 170);
+  const departmentPieSize = getTargetSize(
+    chartImages?.departmentPieSize,
+    180,
+    170
+  );
+  const dailyVisitsSize = getTargetSize(chartImages?.dailyVisitsSize, 220, 170);
+  const customersSize = getTargetSize(chartImages?.customersSize, 220, 170);
 
   return (
     <Document>
@@ -221,8 +240,8 @@ const PDFDocument = ({
                   <Image
                     src={chartImages.monthlyBar}
                     style={{
-                      width: targetWidth,
-                      height: targetHeight,
+                      width: monthlyBarSize.width,
+                      height: monthlyBarSize.height,
                       marginLeft: "auto",
                       marginRight: "auto",
                     }}
@@ -243,28 +262,40 @@ const PDFDocument = ({
             <View style={styles.mediumCard}>
               <Text style={styles.cardTitle}>{data.departmentSales.title}</Text>
               <View style={styles.chartContainer}>
-                <PDFChartImage
-                  type="pie"
-                  data={{
-                    categories: data.departmentSales.series.map(
-                      (item) => item.name
-                    ),
-                    series: [
-                      {
-                        name: data.departmentSales.title,
-                        data: data.departmentSales.series.map(
-                          (item) => item.value
-                        ),
-                        color: "teal",
-                      },
-                    ],
-                  }}
-                  width={180}
-                  height={170}
-                  showGrid={false}
-                  showAxis={false}
-                  showLegend={true}
-                />
+                {chartImages?.departmentPie ? (
+                  <Image
+                    src={chartImages.departmentPie}
+                    style={{
+                      width: departmentPieSize.width,
+                      height: departmentPieSize.height,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}
+                  />
+                ) : (
+                  <PDFChartImage
+                    type="pie"
+                    data={{
+                      categories: data.departmentSales.series.map(
+                        (item) => item.name
+                      ),
+                      series: [
+                        {
+                          name: data.departmentSales.title,
+                          data: data.departmentSales.series.map(
+                            (item) => item.value
+                          ),
+                          color: "teal",
+                        },
+                      ],
+                    }}
+                    width={180}
+                    height={170}
+                    showGrid={false}
+                    showAxis={false}
+                    showLegend={true}
+                  />
+                )}
               </View>
             </View>
           </View>
@@ -289,14 +320,26 @@ const PDFDocument = ({
             <View style={styles.mediumCard}>
               <Text style={styles.cardTitle}>{data.dailyVisits.title}</Text>
               <View style={styles.chartContainer}>
-                <PDFChartImage
-                  type="area"
-                  data={data.dailyVisits}
-                  width={220}
-                  height={170}
-                  showGrid={true}
-                  showAxis={true}
-                />
+                {chartImages?.dailyVisits ? (
+                  <Image
+                    src={chartImages.dailyVisits}
+                    style={{
+                      width: dailyVisitsSize.width,
+                      height: dailyVisitsSize.height,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}
+                  />
+                ) : (
+                  <PDFChartImage
+                    type="area"
+                    data={data.dailyVisits}
+                    width={220}
+                    height={170}
+                    showGrid={true}
+                    showAxis={true}
+                  />
+                )}
               </View>
             </View>
 
@@ -304,15 +347,27 @@ const PDFDocument = ({
               <Text style={styles.cardTitle}>{data.customers.title}</Text>
               <Text style={styles.cardValue}>{data.customers.value}</Text>
               <View style={styles.chartContainer}>
-                <PDFChartImage
-                  type="line"
-                  data={data.customers}
-                  width={220}
-                  height={170}
-                  showGrid={true}
-                  showAxis={true}
-                  showLegend={true}
-                />
+                {chartImages?.customers ? (
+                  <Image
+                    src={chartImages.customers}
+                    style={{
+                      width: customersSize.width,
+                      height: customersSize.height,
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}
+                  />
+                ) : (
+                  <PDFChartImage
+                    type="line"
+                    data={data.customers}
+                    width={220}
+                    height={170}
+                    showGrid={true}
+                    showAxis={true}
+                    showLegend={true}
+                  />
+                )}
               </View>
             </View>
           </View>

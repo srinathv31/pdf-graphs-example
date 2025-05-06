@@ -1,5 +1,6 @@
 "use client";
 
+import React, { forwardRef } from "react";
 import {
   AreaChart,
   Area,
@@ -22,10 +23,13 @@ interface DailyVisitsAreaChartProps {
   };
 }
 
-const DailyVisitsAreaChart = ({ data }: DailyVisitsAreaChartProps) => {
+const DailyVisitsAreaChart = forwardRef<
+  HTMLDivElement,
+  DailyVisitsAreaChartProps
+>(({ data }, ref) => {
   // Convert the data to the format expected by Recharts
   const chartData = data.categories.map((category, index) => {
-    const dataPoint: any = { name: category };
+    const dataPoint: Record<string, number | string> = { name: category };
     data.series.forEach((series) => {
       dataPoint[series.name] = series.data[index];
     });
@@ -33,7 +37,7 @@ const DailyVisitsAreaChart = ({ data }: DailyVisitsAreaChartProps) => {
   });
 
   return (
-    <div className="h-64">
+    <div className="h-64" ref={ref}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -56,6 +60,8 @@ const DailyVisitsAreaChart = ({ data }: DailyVisitsAreaChartProps) => {
       </ResponsiveContainer>
     </div>
   );
-};
+});
+
+DailyVisitsAreaChart.displayName = "DailyVisitsAreaChart";
 
 export default DailyVisitsAreaChart;
