@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import PDFChartImage, { DashboardChartData } from "./PDFChartImage";
+import { DashboardChartsPngs } from "./captureDashboardChartsToPng";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -125,17 +125,20 @@ interface PDFDocumentProps {
   description: string;
   data: {
     summaryCards: SummaryCardData[];
-    monthlySales: DashboardChartData & { title: string };
-    departmentSales: {
-      title: string;
-      series: Array<{ name: string; value: number }>;
-    };
-    dailyVisits: DashboardChartData & { title: string };
-    customers: DashboardChartData & { value: number; title: string };
+    monthlySales: unknown;
+    departmentSales: unknown;
+    dailyVisits: unknown;
+    customers: unknown;
   };
+  chartPngs: DashboardChartsPngs;
 }
 
-const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
+const PDFDocument = ({
+  title,
+  description,
+  data,
+  chartPngs,
+}: PDFDocumentProps) => (
   <Document>
     {/* First Page - Summary Cards and First Charts */}
     <Page size="A4" style={styles.page}>
@@ -155,26 +158,9 @@ const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
               <Text style={styles.cardValue}>{card.title}</Text>
               <Text style={styles.cardDescription}>{card.description}</Text>
               <View style={styles.smallChartContainer}>
-                <PDFChartImage
-                  type="line"
-                  data={{
-                    categories: card.data.map((_: number, idx: number) =>
-                      idx.toString()
-                    ),
-                    series: [
-                      {
-                        name: card.title,
-                        data: card.data,
-                        color: card.color.includes(".")
-                          ? card.color.split(".")[1]
-                          : "blue",
-                      },
-                    ],
-                  }}
-                  width={110}
-                  height={60}
-                  showGrid={true}
-                  showAxis={false}
+                <Image
+                  src={chartPngs.summaryCards[index]}
+                  style={{ width: 110, height: 60 }}
                 />
               </View>
             </View>
@@ -185,43 +171,25 @@ const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
       <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.largeCard}>
-            <Text style={styles.cardTitle}>{data.monthlySales.title}</Text>
+            <Text style={styles.cardTitle}>
+              {(data.monthlySales as any).title}
+            </Text>
             <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="bar"
-                data={data.monthlySales}
-                width={320}
-                height={170}
-                showGrid={true}
-                showAxis={true}
+              <Image
+                src={chartPngs.monthlySales}
+                style={{ width: 320, height: 170 }}
               />
             </View>
           </View>
 
           <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.departmentSales.title}</Text>
+            <Text style={styles.cardTitle}>
+              {(data.departmentSales as any).title}
+            </Text>
             <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="pie"
-                data={{
-                  categories: data.departmentSales.series.map(
-                    (item) => item.name
-                  ),
-                  series: [
-                    {
-                      name: data.departmentSales.title,
-                      data: data.departmentSales.series.map(
-                        (item) => item.value
-                      ),
-                      color: "teal",
-                    },
-                  ],
-                }}
-                width={180}
-                height={170}
-                showGrid={false}
-                showAxis={false}
-                showLegend={true}
+              <Image
+                src={chartPngs.departmentSales}
+                style={{ width: 180, height: 170 }}
               />
             </View>
           </View>
@@ -243,31 +211,28 @@ const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
       <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.dailyVisits.title}</Text>
+            <Text style={styles.cardTitle}>
+              {(data.dailyVisits as any).title}
+            </Text>
             <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="area"
-                data={data.dailyVisits}
-                width={220}
-                height={170}
-                showGrid={true}
-                showAxis={true}
+              <Image
+                src={chartPngs.dailyVisits}
+                style={{ width: 220, height: 170 }}
               />
             </View>
           </View>
 
           <View style={styles.mediumCard}>
-            <Text style={styles.cardTitle}>{data.customers.title}</Text>
-            <Text style={styles.cardValue}>{data.customers.value}</Text>
+            <Text style={styles.cardTitle}>
+              {(data.customers as any).title}
+            </Text>
+            <Text style={styles.cardValue}>
+              {(data.customers as any).value}
+            </Text>
             <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="line"
-                data={data.customers}
-                width={220}
-                height={170}
-                showGrid={true}
-                showAxis={true}
-                showLegend={true}
+              <Image
+                src={chartPngs.customers}
+                style={{ width: 220, height: 170 }}
               />
             </View>
           </View>
