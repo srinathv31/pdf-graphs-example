@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 50,
+    // width: 50,
     height: 50,
     marginBottom: 10,
     alignSelf: "center",
@@ -133,17 +133,22 @@ interface PDFDocumentProps {
     dailyVisits: DashboardChartData & { title: string };
     customers: DashboardChartData & { value: number; title: string };
   };
+  chartImages?: {
+    monthlyBar?: string;
+  };
 }
 
-const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
+const PDFDocument = ({
+  title,
+  description,
+  data,
+  chartImages,
+}: PDFDocumentProps) => (
   <Document>
     {/* First Page - Summary Cards and First Charts */}
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
-        <Image
-          src="/lovable-uploads/ac844856-c66a-4015-abc1-144fc68e43b2.png"
-          style={styles.logo}
-        />
+        <Image src="/logo.png" style={styles.logo} />
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
@@ -187,14 +192,22 @@ const PDFDocument = ({ title, description, data }: PDFDocumentProps) => (
           <View style={styles.largeCard}>
             <Text style={styles.cardTitle}>{data.monthlySales.title}</Text>
             <View style={styles.chartContainer}>
-              <PDFChartImage
-                type="bar"
-                data={data.monthlySales}
-                width={320}
-                height={170}
-                showGrid={true}
-                showAxis={true}
-              />
+              {/* Use the captured monthly bar chart image if available */}
+              {chartImages?.monthlyBar ? (
+                <Image
+                  src={chartImages.monthlyBar}
+                  style={{ width: 320, height: 170 }}
+                />
+              ) : (
+                <PDFChartImage
+                  type="bar"
+                  data={data.monthlySales}
+                  width={320}
+                  height={170}
+                  showGrid={true}
+                  showAxis={true}
+                />
+              )}
             </View>
           </View>
 

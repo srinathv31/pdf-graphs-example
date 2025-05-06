@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import PDFDocument from "./PDFDocument";
 import { toast } from "sonner";
+import domtoimage from "dom-to-image";
+import MonthlyBarChart from "../dashboard/MonthlyBarChart";
 
 interface PDFExportButtonProps {
   title: string;
@@ -19,6 +21,7 @@ const PDFExportButton = ({
   data,
 }: PDFExportButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -26,11 +29,23 @@ const PDFExportButton = ({
     toast.promise(
       (async () => {
         // Add a slight delay to ensure charts have rendered in the DOM
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Create the PDF document
+        // Capture the chart as an image
+        let monthlyBarImage = undefined;
+        if (chartRef.current) {
+          monthlyBarImage = await domtoimage.toPng(chartRef.current);
+          console.log("Captured chart image:", monthlyBarImage);
+        }
+
+        // Create the PDF document, passing the chart image(s)
         const doc = (
-          <PDFDocument title={title} description={description} data={data} />
+          <PDFDocument
+            title={title}
+            description={description}
+            data={data}
+            chartImages={{ monthlyBar: monthlyBarImage }}
+          />
         );
         const blob = await pdf(doc).toBlob();
 
@@ -58,11 +73,28 @@ const PDFExportButton = ({
     setIsExporting(false);
   };
 
+  // Render the chart off-screen for image capture
   return (
-    <Button onClick={handleExport} disabled={isExporting}>
-      <Download className="mr-2 h-4 w-4" />
-      {isExporting ? "Exporting..." : "Export PDF"}
-    </Button>
+    <>
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: 400,
+          height: 320,
+          opacity: 0,
+          pointerEvents: "none",
+          zIndex: -1,
+        }}
+      >
+        <MonthlyBarChart ref={chartRef} data={data.monthlySales} />
+      </div>
+      <Button onClick={handleExport} disabled={isExporting}>
+        <Download className="mr-2 h-4 w-4" />
+        {isExporting ? "Exporting..." : "Export PDF"}
+      </Button>
+    </>
   );
 };
 
